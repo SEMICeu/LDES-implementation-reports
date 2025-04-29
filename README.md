@@ -17,4 +17,4 @@ The following Implementation reports exist:
       </td> 
     </tr>
 </table> 
-If you want to share your Report feel free to open a [pull request](https://github.com/SEMICeu/LDES-implementation-reports/pulls), an [issue](https://github.com/SEMICeu/LDES-implementation-reports/issues) or contact us at digit-semic-team@ec.europa.eu .
+If you want to share your Report feel free to open a <a href="https://github.com/SEMICeu/LDES-implementation-reports/pulls">pull request</a>, an <a href="https://github.com/SEMICeu/LDES-implementation-reports/issues">issue</a> or contact us at digit-semic-team@ec.europa.eu .
