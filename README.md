@@ -1,9 +1,11 @@
 # LDES-implementation-reports
-
+This repository contains all the implementation reports SEMIC and the community have made to support the usage of the LDES specification.
+The intention of these reports is to support specific use cases for LDES allowing the community to learn from this, allowing for easy LDES adoption and to solve edge cases for LDES.
+The following Implementation reports exist:
 
 <table>      
     <tr>      
-      <th>Specification</th>      
+      <th>Implementation Report</th>      
       <th>Description</th>       
     </tr>
     <tr>  
@@ -15,3 +17,4 @@
       </td> 
     </tr>
 </table> 
+If you want to share your Report feel free to open a pull request, GitHub or contact us at digit-semic-team@ec.europa.eu .
