@@ -198,11 +198,11 @@ How? That’s TODO
 
 TODO: create a matrix with tests and whether this report was implemented or not.
 
- * Rijksmuseum: https://data.rijksmuseum.nl/docs/ldes/
- * Exhibitions in the Ghent Design Museum: https://apidg.gent.be/opendata/adlib2eventstream/v1/dmg/tentoonstellingen
- * Objects of the Ghent Design Museum: https://apidg.gent.be/opendata/adlib2eventstream/v1/dmg/objecten
- * Objects of Ghent’s Huis Van Alijn museum: https://apidg.gent.be/opendata/adlib2eventstream/v1/hva/objecten
- * Objects of Ghent’s Museum of Industry: https://apidg.gent.be/opendata/adlib2eventstream/v1/industriemuseum/objecten
- * Objects of Ghent’s STAM museum: https://apidg.gent.be/opendata/adlib2eventstream/v1/stam/objecten
+ * [Rijksmuseum](https://data.rijksmuseum.nl/docs/ldes/)
+ * [Exhibitions in the Ghent Design Museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/dmg/tentoonstellingen)
+ * [Objects of the Ghent Design Museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/dmg/objecten)
+ * [Objects of Ghent’s Huis Van Alijn museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/hva/objecten)
+ * [Objects of Ghent’s Museum of Industry](https://apidg.gent.be/opendata/adlib2eventstream/v1/industriemuseum/objecten)
+ * [Objects of Ghent’s STAM museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/stam/objecten)
 
 
