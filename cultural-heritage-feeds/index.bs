@@ -1,0 +1,208 @@
+<pre class='metadata'>
+Title: Implementation report building Cultural Heritage feeds with LDES
+Shortname: LDES-CH-Feeds
+Level: 1
+Status: LS
+Markup Shorthands: markdown yes
+URL: https://semiceu.github.io/LDES-implementation-reports/cultural-heritage-feeds/index.html
+Repository: https://github.com/SEMICeu/LDES-implementation-reports
+Editor: 
+ - Pieter Colpaert, https://pietercolpaert.be
+Abstract:
+    TODO
+</pre>
+
+# Publishing changes about Cultural Heritage entities # {#feed}
+
+A Cultural Heritage Feed is a Linked Data Event Stream with ActivityStream entities Create, Update and Delete in it about the Cultural Heritage entities in a catalog.
+Cultural Heritage Feeds uses the [[!activitystreams-vocabulary]] to indicate the type of change.
+Three type of activities can be described: 
+ * a Create (i) or an Update (ii), both upserting a set of quads, packaged in a named graph, in the harvester, and 
+ * a Delete (iii), that is intended for the deletion of previously created or updated set of quads.
+
+These activities MUST provide using the property `object` an IRI of the Cultural Heritage entity (this thus cannot be a blank node), SHOULD come with a `published` property with an `xsd:dateTime` datatype, and SHOULD provide a type.
+The activity MUST be identified using an IRI.
+The payload of the Cultural Heritage entity MUST be provided in the named graph with the activity IRI as the graph.
+
+Note: When a harvester processes the set of quads in the named graph, it can create or replace all quads in a named graph of the Cultural Heritage entity, whom’s IRI then possible is a concatenation of the entity IRI with the LDES IRI in order to ensure that multiple representations of the Cultural Heritage entities from various sources can be provided.
+
+Fall-backs for when one of these optional properties are not available:
+ * The type: cfr. [[!activitypub]], we assume the payload of the named graph needs to be processed as an upsert, similar to an Update or a Create
+ * `published`: when no timestamp is included, a consumer MUST keep a list of all processed members to not process an already processed one again. Published can however only be omitted in the case of a LatestVersionSubset (see retention policies).
+
+All activities are immutable: once published one cannot alter the same member again.
+Each activity MUST be a member of an append-only change log or event stream typed `ldes:EventStream`, that MUST be given an IRI.
+This `ldes:EventStream` is the Cultural Heritage Feed that conforms to the Linked Data Event Stream specification.
+On a Cultural Heritage Feed, the `ldes:timestampPath` MUST be set to `as:published`, unless the publisher knows what they are doing, or when the timestamp cannot be provided.
+The `ldes:versionOfPath` MUST be set to object.
+This configures the property that will be used to point to the entity that is being altered.
+
+A Cultural Heritage Feed harvester SHOULD use reuse an existing LDES client implementation.
+
+<div class="example">
+
+```json
+{
+    "@context" : {
+      "ldes": "https://w3id.org/ldes#",
+      "tree": "https://w3id.org/tree#",
+      "as": "https://www.w3.org/ns/activitystreams#",
+      "dct": "http://purl.org/dc/terms/",
+      "xsd":"http://www.w3.org/2001/XMLSchema#",
+      "EventStream" : "ldes:EventStream",
+      "shape": { "@id": "tree:shape", "@type": "@id"},
+      "title": "dct:title",
+      "timestampPath": "ldes:timestampPath",
+      "versionOfPath": "ldes:versionOfPath",
+      "view": "tree:view",
+      "member": "tree:member",
+      "Create": "as:Create",
+      "Delete": "as:Delete",
+      "Update": "as:Update",
+      "published": "as:published",
+      "object": "as:object",
+    },
+    "@id": "#Feed",
+    "@type": "EventStream",
+    "shape": "TODO",
+    "title": "My Cultural Heritage Feed",
+    "timestampPath": "published",
+    "versionOfPath": "object",
+    "view": {
+        "@id": "",
+        "@type": "ldes:EventSource"
+        "comment": "This is the event source"
+    },
+    "member": [
+        {
+            "@id": "https://example.org/Art1#Event1",
+            "@type": "Create",
+            "object": "https://example.org/Art1",
+            "published" : "2023-10-01T12:00:00Z",
+            "@graph": {
+                "@id": "https://example.org/Art",
+                "@type": "ex:Art",
+                "comment": "Everything in here is the actual data that needs to be upserted"
+            }
+        }
+    ]
+}
+```
+
+</div>
+
+A Cultural Heritage Feed MUST be published using either `application/ld+json` or `application/trig` and it MUST set the `Content-Type` header accordingly.
+In this spec, examples are provided for both serializations.
+Through content negotiation, other formats MAY be provided.
+
+TODO: Profile!
+
+This context information MUST be present:
+
+```turtle
+# Typing it as an EventStream
+<#Feed> a ldes:EventStream ;
+        # Indicating every member will adhere to the ActivityShape defined by the Cultural Heritage-Feeds specification
+        tree:shape <TODO> ;
+        # Indicating the timestampPath will be as:published
+        ldes:timestampPath as:published ;
+        # The current page is a page of this event stream
+        tree:view <> ;  # See pagination and retention policies for extra controls we will be able to describe here
+        # a link to all members
+        tree:member <...> .
+```
+
+The [shape.ttl (TODO)](https://TODO) is part of this specification.
+A Cultural Heritage Feeds provider SHOULD test their members before adding them to the feed.
+
+## Activities ## {#activities}
+
+Cultural Heritage entities will change through activities... TODO
+
+## Retention policies ## {#retention-policies}
+
+Without further explanation, a server publishing a Linked Data Event Stream (LDES), is considered to keep the full history of all elements.
+In Cultural Heritage Feeds, harvesters are generally not interested in the full history.
+Therefore we recommend only keeping the latest activity (the create, updates, and remove entities) about an entity in the feed, yet transparently indicating this retention policy.
+
+Note: It may also be possible that the data catalog does not keep track of the deleted entities. In this case, it will be impossible to provide the delete activities. While it is not recommended, we will propose an implicit remove retention policy in the LDES specification. This is currently not supported though.
+
+Note: Also having to keep delete activities indefinetily will be difficult after a long period of time. Therefore a third retention policy will be able to be put in place in order to say that deletions are not kept in the feed after a certain period of time. This is also not supported at this time, but proposed to the LDES specification.
+
+### LatestVersionSubset with deletions ### {#latest-version}
+
+By adding a latest version subset retention policy, we will allow for only the last activities of an object to be added.
+
+<div class="example">
+
+```turtle
+<> ldes:retentionPolicy [
+        a ldes:LatestVersionSubset ;
+        ldes:amount 1    
+    ] .
+```
+
+Or in JSON-LD:
+```json
+{
+    "@context" : {
+      "ldes": "https://w3id.org/ldes#",
+      "tree": "https://w3id.org/tree#",
+      "as": "https://www.w3.org/ns/activitystreams#",
+      "dct": "http://purl.org/dc/terms/",
+      "xsd":"http://www.w3.org/2001/XMLSchema#",
+      "EventStream" : "ldes:EventStream",
+      "shape": { "@id": "tree:shape", "@type": "@id"},
+      "title": "dct:title",
+      "timestampPath": "ldes:timestampPath",
+      "versionOfPath": "ldes:versionOfPath",
+      "view": "tree:view",
+      "member": "tree:member",
+      "Create": "as:Create",
+      "Delete": "as:Delete",
+      "Update": "as:Update",
+      "published": "as:published",
+      "object": "as:object"
+    },
+    "@id": "#Feed",
+    "@type": "EventStream",
+    "timestampPath": "published",
+    "versionOfPath": "object",
+    "view": {
+      "@id": "",
+      "ldes:retentionPolicy": {
+        "@type": "ldes:LatestVersionSubset",
+        "ldes:amount": "1"
+      }
+}
+```
+
+</div>
+
+## Paginating into a Search Tree ## {#pagination}
+
+An LDES Cultural Heritage Feed MUST follow the chronological search tree from the Server Primer.
+
+# Publishing a harverster’s event log # {#harverster-log}
+
+A Cultural Heritage feeds harvester consumes one or more Cultural Heritage Feeds.
+In order to do so, it SHOULD use an LDES compliant client.
+For the emitted objects by such an LDES client, the harvester can count on the fact that the official SHACL shape validates.
+The payload of an update will be contained within the named graph that has the same IRI as the member.
+
+A harvester SHOULD publish the status of their logging on a page.
+
+How? That’s TODO
+
+# Implementation report # {#implementations}
+
+TODO: create a matrix with tests and whether this report was implemented or not.
+
+ * [Rijksmuseum](https://data.rijksmuseum.nl/docs/ldes/)
+ * [Exhibitions in the Ghent Design Museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/dmg/tentoonstellingen)
+ * [Objects of the Ghent Design Museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/dmg/objecten)
+ * [Objects of Ghent’s Huis Van Alijn museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/hva/objecten)
+ * [Objects of Ghent’s Museum of Industry](https://apidg.gent.be/opendata/adlib2eventstream/v1/industriemuseum/objecten)
+ * [Objects of Ghent’s STAM museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/stam/objecten)
+
+
