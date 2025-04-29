@@ -70,7 +70,7 @@ A Cultural Heritage Feed harvester SHOULD use reuse an existing LDES client impl
     "versionOfPath": "object",
     "view": {
         "@id": "",
-	"@type": "ldes:EventSource"
+        "@type": "ldes:EventSource"
         "comment": "This is the event source"
     },
     "member": [
