@@ -194,7 +194,7 @@ A harvester SHOULD publish the status of their logging on a page.
 
 How? That’s TODO
 
-## Implementation report ## {#implementations}
+# Implementation report # {#implementations}
 
 TODO: create a matrix with tests and whether this report was implemented or not.
 
