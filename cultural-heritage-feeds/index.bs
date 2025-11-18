@@ -1,0 +1,254 @@
+<pre class='metadata'>
+Title: Implementation report: building cultural heritage event streams with LDES
+Shortname: CH-LDES
+Level: 1
+Status: LS
+Markup Shorthands: markdown yes
+URL: https://semiceu.github.io/LDES-implementation-reports/cultural-heritage-LDES/index.html
+Repository: https://github.com/SEMICeu/LDES-implementation-reports
+Editor: 
+ - Nuno Freire
+ - Arne Stabenau
+ - Antoine Isaac
+ - Enno Meijers
+ - Pano Maria
+ - Bob Coret
+ - Pieter Colpaert, https://pietercolpaert.be
+Abstract:
+    Publishing a full data dump repetitively will delegate change detection – a fault-prone process – to data consumers. With cultural heritage event streams we propose that cultural heritage data providers publish an event source API that can help to replicate their source datasets about cultural heritage entities towards a harvester, and keep the data on the harvester side in-sync in the way that is intended by the provider. This specification describes how to publish entity changes using the Activity Streams vocabulary and LDES, and how harvesters may process them.
+</pre>
+
+
+<pre class='biblio'>
+{
+  "LDES": {
+    "title": "Linked Data Event Streams",
+    "href": "https://semiceu.github.io/LinkedDataEventStreams/",
+    "authors": [ "Pieter Colpaert" ],
+    "date": "2025-10-07"
+  },
+  "LDES-VOCABULARY": {
+    "title": "Linked Data Event Streams Vocabulary",
+    "href": "https://semiceu.github.io/LinkedDataEventStreams/vocabulary.html",
+    "authors": [ "Pieter Colpaert" ],
+    "date": "2025-10-07"
+  },
+  "LDES-SERVER-PRIMER": {
+    "title": "LDES Server Primer",
+    "href": "https://semiceu.github.io/LinkedDataEventStreams/server-primer",
+    "authors": [ "Pieter Colpaert" ],
+    "date": "2025-10-07"
+  }
+}
+</pre>
+
+# Publishing changes about cultural heritage entities # {#feed}
+
+This section introduces how to represent a cultural heritage event stream (hereafter referred to as CH stream) as a Linked Data Event Stream (LDES) [[!LDES]] with Activity Streams entities [[!activitystreams-vocabulary]]. 
+
+
+CH streams focus on the representation of changes about the representation of cultural heritage entities in a data publication system, enabling consuming systems to maintain their replica of the source dataset consistently and efficiently. Using the same pattern as the [IIIF Change Discovery API](https://iiif.io/api/discovery/1.0/), the changes in a cultural heritage dataset are expected to be represented specifically as instances of Activity Stream activities (create, update and delete) that are performed on entities that are maintained in catalogues of cultural heritage institutions, or in the vocabulary management systems employed by them.
+
+Note: The primary use case addressed by CH streams is the sharing of datasets that are originally designed as sets of records about cultural heritage entities (for example artworks, and terms from a controlled vocabulary used in structured descriptions).These datasets are typically not RDF originally, but cultural heritage institutions publish them as RDF to promote interoperability and data reuse. When expressed in RDF, the resources in these datasets usually still can be grouped by the objects-specific records that underlie them. These entity-specific groupings of statements are what we expect to represent in LDES within the payload of Activity Streams activities.
+
+## Used prefixes ## {#prefixes}
+
+The following prefixes are used throughout this document:
+
+<pre class=simpledef>
+as: https://www.w3.org/ns/activitystreams#
+dct : http://purl.org/dc/terms/
+ldes : https://w3id.org/ldes#
+tree : https://w3id.org/tree#
+rdf : http://www.w3.org/1999/02/22-rdf-syntax-ns#
+</pre>
+
+## General description of cultural heritage event streams ## {#general}
+
+CH streams are append-only event streams represented in a RDF resource typed `ldes:EventStream` that MUST be given an IRI. The `ldes:EventStream` SHOULD have the `ldes:timestampPath` property unless the timestamps of the resources in the stream (activities, cf. Section [[#activities]]) cannot be provided. It SHOULD be set to `as:published`, but it MAY be set to another property. The `ldes:versionOfPath` MUST be set to `as:object`, which configures the property that will be used in `as:Activity` to point to the entity that is the direct object of the activity being altered. 
+
+CH streams rely on RDF Named Graphs. Therefore, a CH stream MUST be published using either `application/ld+json` or `application/trig` as MIME type, and the `Content-Type` header MUST be set accordingly. Through content negotiation, additional formats that support RDF Named Graphs MAY also be offered.
+
+<div class="example" >
+A cultural heritage `ldes:EventStream`
+```json
+{
+    "@context" : {
+      "ldes": "https://w3id.org/ldes#",
+      "tree": "https://w3id.org/tree#",
+      "as": "https://www.w3.org/ns/activitystreams#",
+      "dct": "http://purl.org/dc/terms/",
+    },
+    "@id": "#stream",
+    "@type": "ldes:EventStream",
+    "dct:title": "My cultural heritage event stream",
+    "ldes:timestampPath": "as:published",
+    "ldes:versionOfPath": "as:object",
+}
+```
+
+</div>
+
+## Activities ## {#activities}
+
+CH streams use the [[!activitystreams-vocabulary]] to represent the changes. Three types of activities can be described:
+ * a Create (i) or an Update (ii), both upserting a set of quads, packaged in a named graph, in the harvester, and
+ * a Delete (iii), that is intended for the deletion of previously created or updated sets of quads.
+
+These activities MUST use the property `as:object` with the IRI of a cultural heritage entity, which is the subject of a number of statements;  it thus cannot be a blank node. They SHOULD use a `as:published` property with an `xsd:dateTime` datatype, and SHOULD provide a `rdf:type`. The activity MUST be identified using an IRI. The payload that corresponds to the cultural heritage entity (i.e. the statements about it, cf. this section’s introduction) MUST be provided in the named graph with the activity IRI as the graph.
+
+<div class="note" heading="">
+When one of the following optional properties is not available, the consumer may process the activities as follows:
+ * rdf:type: When rdf:type is omitted, the consumer should assume the payload of the named graph needs to be processed as an upsert, similar to an as:Update or a as:Create
+ * as:published (may only be omitted in the case of a LatestVersionSubset, see retention policies). When as:published is not present, a consumer MUST keep a list of all processed members to not process an already processed one again.
+
+</div>
+
+After publication in the CH stream, an activity must remain immutable. However, it may be deleted in accordance with the retention policy of the CH stream (see Section [[#retention]]).
+The publisher must ensure that no activity is added to the CH stream with a timestamp earlier than the most recent one already published.  
+
+<div class="example">
+A CH stream containing one activity 
+```json
+{
+    "@context" : {
+      "ldes": "https://w3id.org/ldes#",
+      "tree": "https://w3id.org/tree#",
+      "as": "https://www.w3.org/ns/activitystreams#",
+      "dct": "http://purl.org/dc/terms/",
+      "foaf": "http://xmlns.com/foaf/0.1/",
+    },
+    "@id": "#myStream",
+    "@type": "ldes:EventStream",
+    "dct:title": "My cultural heritage event stream",
+    "ldes:timestampPath": "as:published",
+    "ldes:versionOfPath": "as:object",
+    "tree:member": [
+        {
+            "@id": "https://example.org/object1#event1",
+            "@type": "as:Create",
+            "as:object": "https://example.org/object1",
+            "as:published" : "2023-10-01T12:00:00Z",
+            "@graph": {
+                "@id": "https://example.org/object1",
+                "@type": "ex:Book",
+                "dct:title": "An example book",
+                "dct:creator": {
+                  "@id": "https://example.org/object1#event1",
+                  "@type": "foaf:Agent",
+                  "foaf:name": "John Smith",
+                }
+            }
+        }
+    ]
+    …
+}
+```
+
+</div>
+
+
+## The members’ SHACL shape ## {#shape}
+
+Publishers of CH streams have the option to provide a SHACL shape file that communicates an intention of the data provider to respect the shape for every member in the CH stream.
+
+The `ldes:EventStream` MAY have the tree:shape property with a value pointing to a `sh:NodeShape` or to an RDF file containing a set of shapes, which can be used to validate the members in the event stream. If such a shape is provided, a CH stream provider SHOULD test the members before adding them to the stream.
+
+Note: The members of CH streams are Activity Streams activities that include a named graph containing data related to a cultural heritage entity. Since LDES specifies that shapes validate the members of an LDES stream, the shapes defined in CH streams should therefore validate both the activities and the data contained in the named graph of the cultural heritage entity.
+
+Note: Including the members’ SHACL shapes is optional since, currently, SHACL shapes are not widely available for most of the RDF data models used in cultural heritage.  
+
+## Retention policies ## {#retention}
+
+The goal of a retention policy is to indicate in what way a specific view will not be able to provide a complete history of the event stream to the consumer - because not all activities can be published forever. In CH streams, consumers are generally not interested in the full history, therefore, it is recommended that publishers keep in the stream only the last version of each member (this is functionally equivalent to the legacy ldes:LatestVersionSubset policy, which remains in use in certain CH streams and until this ceases to happen MUST be supported by harvesters).
+
+Note: The recommendation to follow such retention policy in CH streams is based on the fact that the algorithms defined by LDES for traversing a stream’s tree structure can become highly inefficient when applied to CH streams representing large cultural heritage datasets that are updated daily, if the full event history is retained in the stream.
+
+This retention policy SHOULD be stated in all tree:Node instances of the stream, with the property ldes:retentionPolicy. Its value SHOULD be a resource that has the property ldes:versionAmount with the value 1.
+
+Note: It may also happen that the source does not keep track of the deleted entities. In this case, the publisher will not be able to provide the delete activities. While this behaviour is not recommended, we will nonetheless propose to add into the LDES specification a new “implicit remove” retention policy, which would make it clear that any previously found activity not in the latest version shall be considered to correspond to a removed object.
+
+Note: Even if deletions are tracked in the source, having to keep delete activities indefinitely will be difficult after a long period of time. Therefore, a third retention policy should be offered in order to express that deletions are not kept in the stream after a certain period of time. This is also not supported at this time in the LDES specification, but we will propose it as an addition.
+
+<div class="example">
+The configuration of the retention policy of a CH stream
+```json
+{
+    "@context" : {
+      "ldes": "https://w3id.org/ldes#",
+      "tree": "https://w3id.org/tree#",
+      "as": "https://www.w3.org/ns/activitystreams#",
+      "dct": "http://purl.org/dc/terms/",
+    },
+    "@id": "#myStream",
+    "@type": "ldes:EventStream",
+    …
+    "view": {
+      "@id": "",
+      "@type": "ldes:EventSource",
+      "ldes:retentionPolicy": {
+        "ldes:versionAmount": 1
+      }
+    …
+}
+```
+
+</div>
+
+## Versioning and transactions ## {#versioning}
+
+CH streams must also define how the LDES versioning mechanism should be used by consumers. Since CH streams use Activity Stream activities as its members, on the `ldes:EventStream` entity, the following properties should be used (consult the LDES vocabulary [[!LDES-VOCABULARY]] for an explanation of the properties):
+
+ * `ldes:versionOfPath` - MUST be provided with the value `as:object`
+ * `ldes:versionDeleteObject` - MUST be provided with the value  `as:Delete`
+ * `ldes:versionCreateObject` - MUST be provided with the value  `as:Create`
+ * `ldes:versionUpdateObject` - MUST be provided with the value  `as:Update`
+ * `ldes:versionDeletePath` - MAY be provided but MUST have the value `rdf:type`
+ * `ldes:versionCreatePath` - MAY be provided but MUST have the value `rdf:type`
+ * `ldes:versionUpdatePath` - MAY be provided but MUST have the value `rdf:type`
+
+<div class="example">
+The minimum configuration of the versioning properties for CH streams
+```json 
+{
+    "@context" : {
+      "ldes": "https://w3id.org/ldes#",
+      "tree": "https://w3id.org/tree#",
+      "as": "https://www.w3.org/ns/activitystreams#",
+      "dct": "http://purl.org/dc/terms/",
+    },
+    "@id": "#stream",
+    "@type": "ldes:EventStream",
+    "ldes:timestampPath": "as:published",
+    "ldes:versionOfPath": "as:object",
+    "ldes:versionCreateObject": "as:Create",
+    "ldes:versionUpdateObject": "as:Update",
+    "ldes:versionDeletePath": "as:Delete",
+    …
+}
+```
+
+</div>
+
+For typical cultural heritage applications of LDES, transactions are generally unnecessary. Nonetheless, publishers MAY choose to apply transactions on their streams in particular cases, as defined in the LDES specification [[!LDES]].
+
+## Traversing the search tree ## {#traversing}
+
+An CH stream MUST follow the chronological search tree from the Server Primer [[LDES-SERVER-PRIMER]]. Consequently, LDES clients SHOULD traverse a CH stream using the chronological ascending order mode specified in the LDES specification [[!LDES]].
+
+# Implementation report # {#implementation}
+
+## Publisher implementations ## {#implementationProviders}
+
+ * MINT - Metadata INTeroperability services ([example LDES entrypoint](https://mint-ldes.ails.ece.ntua.gr/euscreenxl/1008/ldes))
+ * [Rijksmuseum](https://data.rijksmuseum.nl/docs/ldes/)
+ * [Exhibitions in the Ghent Design Museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/dmg/tentoonstellingen)
+ * [Objects of the Ghent Design Museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/dmg/objecten)
+ * [Objects of Ghent’s Huis Van Alijn museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/hva/objecten)
+ * [Objects of Ghent’s Museum of Industry](https://apidg.gent.be/opendata/adlib2eventstream/v1/industriemuseum/objecten)
+ * [Objects of Ghent’s STAM museum](https://apidg.gent.be/opendata/adlib2eventstream/v1/stam/objecten)
+
+## Consumer implementations ## {#implementationClients}
+
+[Europeana](https://europeana.eu/) can harvest CH streams that use the [Europeana Data Model](https://pro.europeana.eu/page/edm-documentation) (EDM) in the payload of the cultural heritage entity.
+
