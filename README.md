@@ -22,8 +22,6 @@ The following Implementation reports exist:
 	  </td>
 	  <td>
 	   This implementation report specifies how cultural-heritage datasets (e.g., artworks, museum objects, vocabularies) can be exposed as incremental event streams using LDES and ActivityStreams. It covers the stream design, versioning, retention policies, activity types (Create/Update/Delete), publisher/consumer real-world instances, and conformance requirements.
-	   
-	   This is especially relevant for institutions publishing RDF-based cultural-heritage data, and for harvesting platforms aiming to keep in sync with source changes rather than relying on periodic full dumps.
 	  </td>
 	</tr>
 </table> 
