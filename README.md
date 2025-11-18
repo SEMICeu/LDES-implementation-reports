@@ -16,5 +16,15 @@ The following Implementation reports exist:
         Publishing a full data dump over and over again will delegate change detection -- a fault prone process -- to data consumers. With DCAT-AP Feeds we propose that DCAT-AP catalog maintainers publish an event source API that can help to replicate the catalog towards a harvester, and always keep it in-sync in the way that is intended by the publisher. Therefore, this spec describes how to publish your DCAT-AP entity changes using the Activity Streams vocabulary and LDES. It also provides a specification for harvesters to provide transparency into their harvesting progress.
       </td> 
     </tr>
+	<tr>
+	  <td>
+        <a href="https://semiceu.github.io/LDES-implementation-reports/cultural-heritage-feeds/">Cultural Heritage Event Streams with LDES</a>
+	  </td>
+	  <td>
+	   This implementation report specifies how cultural-heritage datasets (e.g., artworks, museum objects, vocabularies) can be exposed as incremental event streams using LDES and ActivityStreams. It covers the stream design, versioning, retention policies, activity types (Create/Update/Delete), publisher/consumer real-world instances, and conformance requirements.
+	   
+	   This is especially relevant for institutions publishing RDF-based cultural-heritage data, and for harvesting platforms aiming to keep in sync with source changes rather than relying on periodic full dumps.
+	  </td>
+	</tr>
 </table> 
 If you want to share your Report feel free to open a <a href="https://github.com/SEMICeu/LDES-implementation-reports/pulls">pull request</a>, an <a href="https://github.com/SEMICeu/LDES-implementation-reports/issues">issue</a> or contact us at digit-semic-team@ec.europa.eu .
