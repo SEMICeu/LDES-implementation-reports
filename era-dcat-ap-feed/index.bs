@@ -1,0 +1,193 @@
+<pre class='metadata'>
+Title: Implementation report: publishing a dcat-ap-feed for the EU Agency for Railways
+Shortname: ERA-DCAT-AP-FEED
+Level: 1
+Status: LS
+Markup Shorthands: markdown yes
+URL: https://semiceu.github.io/LDES-implementation-reports/era-dcat-ap-feed/index.html
+Repository: https://github.com/SEMICeu/LDES-implementation-reports
+Editor:
+ - Julian Rojas Melendez, https://julianrojas.org
+ - Ghislain Atemezing
+Abstract:
+    This implementation report describes how the EU Agency for Railways (ERA)
+publishes data resource updates following the DCAT-AP-feeds specification
+which relies on LDES and the Activity Streams v2.0 vocabulary. 
+The feed runs and is published by relying solely on a Gitlab CI/CD pipeline, 
+which stores the static files of the feed in a public Gitlab repository. 
+</pre>
+
+
+<pre class='biblio'>
+{
+  "LDES": {
+    "title": "Linked Data Event Streams",
+    "href": "https://semiceu.github.io/LinkedDataEventStreams/",
+    "authors": [ "Pieter Colpaert" ],
+    "date": "2025-10-07"
+  },
+  "LDES-VOCABULARY": {
+    "title": "Linked Data Event Streams Vocabulary",
+    "href": "https://semiceu.github.io/LinkedDataEventStreams/vocabulary.html",
+    "authors": [ "Pieter Colpaert" ],
+    "date": "2025-10-07"
+  },
+  "LDES-SERVER-PRIMER": {
+    "title": "LDES Server Primer",
+    "href": "https://semiceu.github.io/LinkedDataEventStreams/server-primer",
+    "authors": [ "Pieter Colpaert" ],
+    "date": "2025-10-07"
+  },
+  "DCAT-AP-FEEDS": {
+    "title": "DCAT-AP Feeds Specification",
+    "href": "https://semiceu.github.io/LDES-DCAT-AP-feeds/",
+    "authors": [ "SEMIC" ]
+  }
+}
+</pre>
+
+# Publishing changes about the EU Agency for Railways data resources as an DCAT-AP-Feed # {#feed}
+
+This section introduces how to represent the metadata feed for the EU Agency for Railways (ERA) as a DCAT-AP-Feed [[!DCAT-AP-FEEDS]] which is a specific type of Linked Data Event Stream (LDES) [[!LDES]] using Activity Streams entities [[!activitystreams-vocabulary]]. 
+
+The ERA DCAT-AP feed focuses on the representation of changes about the DCAT-AP metadata of the EU Railway Agency, enabling consuming systems to maintain their replica of the source datasets consistently and efficiently. The feed is a proof-of-concept [RDF-Connect](https://rdf-connect.github.io/) pipeline that produces a DCAT-AP-Feed [[!DCAT-AP-FEEDS]] from ERA's DCAT-AP metadata, which is originally available as a queryable named graph at `http://data.europa.eu/949/graph/uat/dcat`.
+
+The pipeline is executed periodically (every 18 hours) to:
+1. Fetch the DCAT-AP data from ERA's Virtuoso endpoint.
+2. Detect any changes in the described assets by comparing with the previous state.
+3. Write detected changes to the LDES feed as a collection of static documents.
+
+## Used prefixes ## {#prefixes}
+
+The following prefixes are used throughout this document:
+
+<pre class=simpledef>
+as: https://www.w3.org/ns/activitystreams#
+dct: http://purl.org/dc/terms/
+dcat: http://www.w3.org/ns/dcat#
+ldes: https://w3id.org/ldes#
+tree: https://w3id.org/tree#
+rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+</pre>
+
+## General description of the ERA DCAT-AP feed ## {#general}
+
+The ERA DCAT-AP feed is an append-only event stream represented as an RDF resource typed `ldes:EventStream` that is given an IRI. 
+The `ldes:EventStream` has the `ldes:timestampPath` property set to `as:published`, which configures the property used in `as:Activity` 
+to point to the entity that is the direct object of the activity being altered.
+
+The feed relies on RDF Named Graphs. The static documents are served using GitLab Pages and are published using `application/trig` as the MIME type.
+
+<div class="example" >
+The ERA `ldes:EventStream` definition
+```turtle
+<http://data.europa.eu/dy6/def/as/ERAStream> a ldes:EventStream, dcat:Dataset;
+    ldes:timestampPath as:published;
+    dcat:publisher <http://publications.europa.eu/resource/authority/corporate-body/ERA>;
+    dcat:title "DCAT-AP Feed of ERA"@en, "Flujo DCAT-AP de ERA"@es, "Flux DCAT-AP de l'ERA"@fr;
+    tree:view <https://era-europa-eu.gitlab.io/public/interoperable-data-programme/era-ontology/era-dcat-ap-feed/http_3A_2F_2Fdata.europa.eu_2Fdy6_2Fdef_2Fas_2FERAStream/index.trig>.
+```
+
+</div>
+
+## Activities ## {#activities}
+
+The pipeline generates ActivityStreams events (Create, Update, Delete) for changed resources. 
+These activities use the property `as:object` with the IRI of the DCAT-AP entity. 
+They also use the `as:published` property with an `xsd:dateTime` datatype. 
+The activity is identified using an IRI, and the payload that corresponds to the DCAT-AP entity is provided within a named graph 
+matching the activity IRI.
+
+<div class="example">
+An activity in the ERA DCAT-AP feed in TriG
+```trig
+<#eb0078d9f7818be07f657123a947589c> a <https://www.w3.org/ns/activitystreams#Create>;
+    <https://www.w3.org/ns/activitystreams#object> <http://data.europa.eu/949/id/distribution/ERAdump_v303>;
+    <https://www.w3.org/ns/activitystreams#published> "2025-11-19T05:07:28.244Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>.
+
+<#eb0078d9f7818be07f657123a947589c> {
+    <http://data.europa.eu/949/id/distribution/ERAdump_v303> a <http://www.w3.org/ns/dcat#Distribution>;
+        <http://purl.org/dc/terms/issued> "2025-07-24"^^<http://www.w3.org/2001/XMLSchema#date>;
+        <http://purl.org/dc/terms/title> "ERA KG dump v3.0.3"@en;
+        <http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/ENG>;
+        <http://www.w3.org/ns/dcat#accessURL> <https://doi.org/10.5281/zenodo.15691818>;
+        <http://www.w3.org/ns/dcat#downloadURL> <https://zenodo.org/records/16413403/files/2025-07-24-rinf-xml-combined.nq>;
+        <http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/n-quads>;
+        <http://purl.org/dc/terms/license> <http://data.europa.eu/eli/dec_impl/2017/863/oj> .
+}
+```
+
+</div>
+
+## Bucketization and state tracking ## {#bucketization}
+
+Changes are tracked by comparing the fetched SPARQL query results with the previous state stored in a LevelDB instance. 
+The activities are then bucketized using time-based fragmentation (monthly buckets). 
+This allows the static files to scale predictably over time.
+
+## Versioning ## {#versioning}
+
+The feed uses the LDES versioning mechanism by providing the `ldes:timestampPath` set to `as:published`. 
+It also adheres to Activity Stream requirements.
+
+## Traversing the search tree ## {#traversing}
+
+The feed MUST follow the chronological search tree from the Server Primer [[LDES-SERVER-PRIMER]]. 
+Consequently, LDES clients SHOULD traverse the feed using the chronological ascending order mode specified in the LDES specification [[!LDES]].
+
+# Implementation report # {#implementation}
+
+## Architecture ## {#architecture}
+
+The pipeline is implemented using RDF-Connect processors. It runs as a GitLab CI/CD pipeline, 
+taking the data from the source endpoint to the static pages output.
+
+```text
+[ERA Virtuoso SPARQL Endpoint]
+         ↓
+   [HttpFetch Processor]
+         ↓
+  [DumpsToFeed Processor] → [LevelDB State]
+         ↓
+    [Sdsify Processor]
+         ↓
+   [Bucketize Processor] → [Feed State JSON]
+         ↓
+ [LdesDiskWriter Processor]
+         ↓
+     [docs/ directory] → [GitLab Pages]
+```
+
+## Setup ## {#setup}
+
+### Prerequisites ### {#prerequisites}
+- Node.js 22 or higher
+- npm
+
+### Local development ### {#local-development}
+
+```bash
+cd pipeline
+npm install
+npx @rdfc/js-runner rdfc-pipeline.ttl
+```
+
+## Publisher implementations ## {#implementationProviders}
+
+* **ERA LDES feed**: The LDES feed is kept as a collection of static documents which are served using GitLab Pages. 
+* **Entrypoint**: `<https://era-europa-eu.gitlab.io/public/interoperable-data-programme/era-ontology/era-dcat-ap-feed/index.trig>`
+* **Source implementation**: `<https://gitlab.com/era-europa-eu/public/interoperable-data-programme/era-ontology/era-dcat-ap-feed>`
+
+## Additional Resources ## {#additional-resources}
+
+- [GitLab CI/CD Documentation](https://docs.gitlab.com/ee/ci/)
+- [GitLab Pages Documentation](https://docs.gitlab.com/ee/user/project/pages/)
+- [Pipeline Schedules Documentation](https://docs.gitlab.com/ee/ci/pipelines/schedules.html)
+- [RDF-Connect Documentation](https://rdf-connect.github.io/)
+- [DCAT-AP Feed Specification](https://semiceu.github.io/LDES-DCAT-AP-feeds/)
+
+## Support ## {#support}
+
+For issues specific to:
+- **RDF-Connect pipeline**: Check [RDF-Connect GitHub](https://github.com/rdf-connect)
+- **ERA KG metadata**: Contact ERA technical support
