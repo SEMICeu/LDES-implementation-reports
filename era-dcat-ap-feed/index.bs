@@ -10,11 +10,7 @@ Editor:
  - Julian Rojas Melendez, https://julianrojas.org
  - Ghislain Atemezing
 Abstract:
-    This implementation report describes how the EU Agency for Railways (ERA)
-publishes data resource updates following the DCAT-AP-feeds specification
-which relies on LDES and the Activity Streams v2.0 vocabulary. 
-The feed runs and is published by relying solely on a Gitlab CI/CD pipeline, 
-which stores the static files of the feed in a public Gitlab repository. 
+    This implementation report describes how the EU Agency for Railways (ERA) publishes data resource updates following the DCAT-AP-feeds specification which relies on LDES and the Activity Streams v2.0 vocabulary. The feed runs and is published by relying solely on a Gitlab CI/CD pipeline, which stores the static files of the feed in a public Gitlab repository. 
 </pre>
 
 
@@ -100,7 +96,7 @@ matching the activity IRI.
 
 <div class="example">
 An activity in the ERA DCAT-AP feed in TriG
-```trig
+```turtle
 <#eb0078d9f7818be07f657123a947589c> a <https://www.w3.org/ns/activitystreams#Create>;
     <https://www.w3.org/ns/activitystreams#object> <http://data.europa.eu/949/id/distribution/ERAdump_v303>;
     <https://www.w3.org/ns/activitystreams#published> "2025-11-19T05:07:28.244Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>.
