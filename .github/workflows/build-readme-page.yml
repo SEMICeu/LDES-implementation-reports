@@ -22,7 +22,7 @@ jobs:
       - name: Convert README to HTML
         run: |
           mkdir -p site
-          pandoc README.md --metadata title="The LDES implementation reports" -f markdown -t html -s -o site/index.html 
+          pandoc README.md --metadata title="The LDES implementation reports" --variable=title=""  -f markdown -t html -s -o site/index.html 
 
       - name: Deploy landing page to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
