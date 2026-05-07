@@ -1,9 +1,11 @@
-# LDES-implementation-reports
-This repository contains all the implementation reports SEMIC and the community have made to support the usage of the LDES specification.
-The intention of these reports is to support specific use cases for LDES allowing the community to learn from this, allowing for easy LDES adoption and to solve edge cases for LDES.
-The following Implementation reports exist:
+# Linked Data Event Streams (LDES): the implementation reports
 
-<table>      
+This repository contains implementation reports that SEMIC and the community have made to support the use of the LDES specification.
+
+The intention of these reports is to document specific LDES use cases, help the community learn from them, support easy LDES adoption, and address LDES edge cases.
+The following implementation reports exist:
+
+<table>  
     <tr>      
       <th>Implementation Report</th>      
       <th>Description</th>       
@@ -24,5 +26,14 @@ The following Implementation reports exist:
 	   This implementation report specifies how cultural-heritage datasets (e.g., artworks, museum objects, vocabularies) can be exposed as incremental event streams using LDES and ActivityStreams. It covers the stream design, versioning, retention policies, activity types (Create/Update/Delete), publisher/consumer real-world instances, and conformance requirements.
 	  </td>
 	</tr>
-</table> 
-If you want to share your Report feel free to open a <a href="https://github.com/SEMICeu/LDES-implementation-reports/pulls">pull request</a>, an <a href="https://github.com/SEMICeu/LDES-implementation-reports/issues">issue</a> or contact us at digit-semic-team@ec.europa.eu .
+	<tr>
+	  <td>
+        <a href="https://semiceu.github.io/LDES-implementation-reports/era-dcat-ap-feed/">ERA DCAT-AP Feed</a>
+	  </td>
+	  <td>
+	   This implementation report is a proof-of-concept RDF-Connect pipeline that generates a DCAT-AP Feed from the European Union Railway Agency's DCAT-AP metadata. It covers change detection, ActivityStreams event generation, time-based bucketization, and static feed publication via GitLab Pages.
+	  </td>
+	</tr>
+</table>
+
+If you want to share your report or implementation, feel free to open a <a href="https://github.com/SEMICeu/LDES-implementation-reports/pulls">pull request</a>, file an <a href="https://github.com/SEMICeu/LDES-implementation-reports/issues">issue</a>, or contact us at digit-semic-team@ec.europa.eu.
