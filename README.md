@@ -1,6 +1,10 @@
-# Linked Data Event Streams (LDES): the implementation reports
+<div style="text-align: center;">
+<img src="https://semiceu.github.io/style-guide/_/img/semic-logo.png" alt="SEMIC Logo" width="200" style="vertical-align: middle;">
+</div>
 
-This repository contains implementation reports that SEMIC and the community have made to support the use of the LDES specification.
+# The Linked Data Event Streams (LDES) implementation reports
+
+This repository contains implementation reports that SEMIC and the community have made to support the use of the [LDES specification](https://w3id.org/ldes/specification).
 
 The intention of these reports is to document specific LDES use cases, help the community learn from them, support easy LDES adoption, and address LDES edge cases.
 The following implementation reports exist:

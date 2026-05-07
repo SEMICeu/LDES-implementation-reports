@@ -1,0 +1,37 @@
+name: Build README landing page
+
+on:
+  push:
+    branches: [main]
+    paths: [README.md]
+  pull_request:
+    paths: [README.md]
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+
+      - name: Convert README to HTML
+        run: |
+          mkdir -p site
+          pandoc README.md --metadata title="The LDES implementation reports" -f markdown -t html -s -o site/index.html 
+
+      - name: Deploy landing page to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: site
+          publish_branch: gh-pages
+          keep_files: true
+          allow_empty_commit: true
+          user_name: "SEMIC EU archival [bot]"
+          user_email: "semic-eu+github-actions[bot]@users.noreply.github.com"
+          commit_message: "Build README landing page from README.md"
