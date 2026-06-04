@@ -48,11 +48,11 @@ In addition to the implementation reports, this repository also collects softwar
 
 ### Software building blocks
 
-| Name | Description | License | Link |
-| --- | --- | --- | --- |
-| OpenLDES | Java-based LDES pipeline components, examples and documentation for publisher, intermediary and consumer pipelines in the Flanders Smart Data Space. | EUPL-1.2 | [https://openldes.org/](https://openldes.org/) |
-| RDF-Connect | Modular RDF pipeline framework with reusable LDES processors, runners and orchestrators for JavaScript and JVM environments. | MIT | [https://rdf-connect.github.io/](https://rdf-connect.github.io/) |
-| LDES-Server.NET | Flexible .NET LDES server implementation with Docker support, health checks and production deployment guidance. | EUPL-1.2 | [https://ldes-server.net/](https://ldes-server.net/) |
+| Name | Description                                                                                                                                                             | License  | Link                                                            |
+| --- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-----------------------------------------------------------------|
+| OpenLDES | Java-based LDES server and LDES pipeline components, examples and documentation for publisher, intermediary and consumer pipelines, with Docker and Kubernetes support. | EUPL-1.2 | [https://openldes.org/](https://openldes.org/)                  |
+| RDF-Connect | Modular RDF pipeline framework with reusable LDES processors, runners and orchestrators for JavaScript and JVM environments.                                            | MIT      | [https://rdf-connect.github.io/](https://rdf-connect.github.io/) |
+| LDES-Server.NET | Flexible .NET LDES server implementation with Docker support, health checks and production deployment guidance.                                                         | EUPL-1.2 | [https://ldes-server.net/](https://ldes-server.net/)            |
 
 ### Public LDES examples
 
