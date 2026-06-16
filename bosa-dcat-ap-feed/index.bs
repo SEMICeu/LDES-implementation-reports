@@ -41,7 +41,7 @@ Abstract:
     "title": "RDF-Connect",
     "href": "https://rdf-connect.github.io/",
     "authors": [ "Arthur Vercruysse", "Ieben Smessaert", "Julian Rojas Melendez" ]
-  },
+  }
 }
 </pre>
 
