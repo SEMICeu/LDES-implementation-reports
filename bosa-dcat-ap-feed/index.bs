@@ -136,15 +136,8 @@ The feed generation is implemented as an RDF-Connect pipeline defined in `pipeli
 The current implementation composes six processors in sequence:
 1. **`rdfc:GlobRead` (`<globReader>`)** reads `../all/datagovbe_edp.xml.gz` in binary mode.
 2. **`rdfc:GunzipFile` (`<gunzipper>`)** decompresses the RDF/XML dump.
-3. **`rdfc:DumpsToFeed` (`<asConverter>`)** converts the dump to Activity Streams events, with:
-   - `rdfc:dumpContentType "application/rdf+xml"`
-   - `rdfc:focusNodesStrategy "extract"`
-   - `rdfc:nodeShapeIri "https://semiceu.github.io/LDES-DCAT-AP-feeds/shape.ttl#ActivityShape"`
-   - `rdfc:dbDir "./leveldb/"`
-4. **`rdfc:Sdsify` (`<sdsifier>`)** annotates members with SDS metadata and sets:
-   - stream IRI: `https://w3id.org/bosa/dcat-ap-feed`
-   - timestamp path: `as:published`
-   - type filter: `as:Create`, `as:Update`, `as:Delete`
+3. **`rdfc:DumpsToFeed` (`<asConverter>`)** converts the dump to Activity Streams events, using `rdfc:dumpContentType "application/rdf+xml"`, `rdfc:focusNodesStrategy "extract"`, `rdfc:nodeShapeIri "https://semiceu.github.io/LDES-DCAT-AP-feeds/shape.ttl#ActivityShape"`, and `rdfc:dbDir "./leveldb/"`.
+4. **`rdfc:Sdsify` (`<sdsifier>`)** annotates members with SDS metadata and sets stream IRI `https://w3id.org/bosa/dcat-ap-feed`, timestamp path `as:published`, and type filter `as:Create`, `as:Update`, `as:Delete`.
 5. **`rdfc:Bucketize` (`<bucketizer>`)** applies time-based fragmentation and writes state to `./feed-state/bucketize-state.json`.
 6. **`rdfc:LdesDiskWriter` (`<ldesDiskWriter>`)** writes the resulting feed fragments into `../docs/`.
 
