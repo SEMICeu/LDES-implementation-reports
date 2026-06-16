@@ -37,7 +37,7 @@ Abstract:
     "href": "https://semiceu.github.io/LDES-DCAT-AP-feeds/",
     "authors": [ "SEMIC" ]
   },
-  RDF_CONNECT: {
+  "RDF_CONNECT": {
     "title": "RDF-Connect",
     "href": "https://rdf-connect.github.io/",
     "authors": [ "Arthur Vercruysse", "Ieben Smessaert", "Julian Rojas Melendez" ]
