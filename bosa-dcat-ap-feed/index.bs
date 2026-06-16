@@ -44,11 +44,11 @@ Abstract:
 
 This section describes how BOSA publishes changes from the Belgian federal DCAT-AP catalog as a DCAT-AP-Feed [[!DCAT-AP-FEEDS]], which is a specific type of Linked Data Event Stream (LDES) [[!LDES]] using Activity Streams entities [[!activitystreams-vocabulary]].
 
-The source code implementation of the pipeline is maintained at <https://github.com/rdf-connect/belgium-dcat-ap-feed>. The pipeline is implemented with [RDF-Connect](https://rdf-connect.github.io/) and transforms the Belgian DCAT-AP catalog dump into an append-only feed of Activity Streams events.
+The source code implementation of the pipeline is maintained at [rdf-connect/belgium-dcat-ap-feed](https://github.com/rdf-connect/belgium-dcat-ap-feed). The pipeline is implemented with [RDF-Connect](https://rdf-connect.github.io/) and transforms the Belgian DCAT-AP catalog dump into an append-only feed of Activity Streams events.
 
 This implementation is currently deployed in two publication contexts:
-1. **BOSA premises deployment**: a live feed is published at <https://mqa.data.gov.be/ldes>. At the time of writing, this deployment does not yet include the latest updates from the upstream pipeline source code. Coordination with BOSA is ongoing to align their deployment with the newest implementation state.
-2. **GitHub Pages deployment**: a live feed is also published at <https://rdf-connect.github.io/belgium-dcat-ap-feed/index.trig>. This feed is generated and published automatically by a GitHub Action that runs the RDF-Connect pipeline and commits the resulting static feed artifacts.
+1. **BOSA premises deployment**: a live feed is published at [mqa.data.gov.be/ldes](https://mqa.data.gov.be/ldes). At the time of writing, this deployment does not yet include the latest updates from the upstream pipeline source code. Coordination with BOSA is ongoing to align their deployment with the newest implementation state.
+2. **GitHub Pages deployment**: a live feed is also published at [rdf-connect.github.io/belgium-dcat-ap-feed/index.trig](https://rdf-connect.github.io/belgium-dcat-ap-feed/index.trig). This feed is generated and published automatically by a GitHub Action that runs the RDF-Connect pipeline and commits the resulting static feed artifacts.
 
 ## Used prefixes ## {#prefixes}
 
@@ -142,7 +142,7 @@ The current implementation composes six processors in sequence:
    - `rdfc:nodeShapeIri "https://semiceu.github.io/LDES-DCAT-AP-feeds/shape.ttl#ActivityShape"`
    - `rdfc:dbDir "./leveldb/"`
 4. **`rdfc:Sdsify` (`<sdsifier>`)** annotates members with SDS metadata and sets:
-   - stream IRI: `<https://w3id.org/bosa/dcat-ap-feed>`
+   - stream IRI: `https://w3id.org/bosa/dcat-ap-feed`
    - timestamp path: `as:published`
    - type filter: `as:Create`, `as:Update`, `as:Delete`
 5. **`rdfc:Bucketize` (`<bucketizer>`)** applies time-based fragmentation and writes state to `./feed-state/bucketize-state.json`.
@@ -186,9 +186,9 @@ npx rdfc github-pipeline.ttl
 
 ## Publisher implementations ## {#implementationProviders}
 
-* **Source implementation**: `<https://github.com/rdf-connect/belgium-dcat-ap-feed>`
-* **BOSA deployment (premises)**: `<https://mqa.data.gov.be/ldes>`
-* **GitHub Pages deployment (automated by GitHub Action)**: `<https://rdf-connect.github.io/belgium-dcat-ap-feed/index.trig>`
+* **Source implementation**: [rdf-connect/belgium-dcat-ap-feed](https://github.com/rdf-connect/belgium-dcat-ap-feed)
+* **BOSA deployment (premises)**: [mqa.data.gov.be/ldes](https://mqa.data.gov.be/ldes)
+* **GitHub Pages deployment (automated by GitHub Action)**: [rdf-connect.github.io/belgium-dcat-ap-feed/index.trig](https://rdf-connect.github.io/belgium-dcat-ap-feed/index.trig)
 * **Deployment alignment status**: the BOSA premises deployment is live, but does not yet include all latest upstream pipeline updates; synchronization is in progress.
 
 ## Additional Resources ## {#additional-resources}
@@ -219,7 +219,7 @@ Until now, Piveau's default harvesting mechanisms were limited to traditional po
 
 ## The `piveau-consus-importing-ldes` plugin ## {#piveau-plugin}
 
-To enable DCAT-AP-feed consumption within Piveau, a new Piveau Consus segment was developed and made available as open-source at <https://github.com/rdf-connect/piveau-consus-importing-ldes>. This segment acts as a drop-in LDES importer for Piveau Consus pipelines, exposing an HTTP endpoint that Piveau Consus invokes to start feed traversal.
+To enable DCAT-AP-feed consumption within Piveau, a new Piveau Consus segment was developed and made available as open-source at [rdf-connect/piveau-consus-importing-ldes](https://github.com/rdf-connect/piveau-consus-importing-ldes). This segment acts as a drop-in LDES importer for Piveau Consus pipelines, exposing an HTTP endpoint that Piveau Consus invokes to start feed traversal.
 
 ### Architecture ### {#plugin-architecture}
 
