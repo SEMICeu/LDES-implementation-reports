@@ -1,0 +1,369 @@
+<pre class='metadata'>
+Title: Implementation report: publishing a dcat-ap-feed for BOSA (Federal Public Service for Policy and Support) Belgium
+Shortname: BOSA-DCAT-AP-FEED
+Level: 1
+Status: LS
+Markup Shorthands: markdown yes
+URL: https://semiceu.github.io/LDES-implementation-reports/bosa-dcat-ap-feed/index.html
+Repository: https://github.com/SEMICeu/LDES-implementation-reports
+Editor:
+ - Julian Rojas Melendez, https://julianrojas.org
+Abstract:
+    This implementation report describes how the Federal Public Service for Policy and Support (BOSA) Belgium publishes data resource updates following the DCAT-AP-feeds specification which relies on LDES and the Activity Streams v2.0 vocabulary. The feed runs and is published both at BOSA's premises and by relying on a GitHub action, which stores the static files of the feed in a public GitHub repository. This also reports on the technical components developed to integrate with the EU Publications Office platform (Piveau) to enable the ingestion and synchronization of DCAT-AP-feeds.
+</pre>
+
+<pre class='biblio'>
+{
+  "LDES": {
+    "title": "Linked Data Event Streams",
+    "href": "https://semiceu.github.io/LinkedDataEventStreams/",
+    "authors": [ "Pieter Colpaert" ],
+    "date": "2025-10-07"
+  },
+  "LDES-VOCABULARY": {
+    "title": "Linked Data Event Streams Vocabulary",
+    "href": "https://semiceu.github.io/LinkedDataEventStreams/vocabulary.html",
+    "authors": [ "Pieter Colpaert" ],
+    "date": "2025-10-07"
+  },
+  "LDES-SERVER-PRIMER": {
+    "title": "LDES Server Primer",
+    "href": "https://semiceu.github.io/LinkedDataEventStreams/server-primer",
+    "authors": [ "Pieter Colpaert" ],
+    "date": "2025-10-07"
+  },
+  "DCAT-AP-FEEDS": {
+    "title": "DCAT-AP Feeds Specification",
+    "href": "https://semiceu.github.io/LDES-DCAT-AP-feeds/",
+    "authors": [ "SEMIC" ]
+  },
+  "RDF_CONNECT": {
+    "title": "RDF-Connect",
+    "href": "https://rdf-connect.github.io/",
+    "authors": [ "Arthur Vercruysse", "Ieben Smessaert", "Julian Rojas Melendez" ]
+  }
+}
+</pre>
+
+# Publishing changes about the Belgian federal data catalog as a DCAT-AP-Feed # {#feed}
+
+This section describes how BOSA publishes changes from the Belgian federal DCAT-AP catalog as a DCAT-AP-Feed [[!DCAT-AP-FEEDS]], which is a specific type of Linked Data Event Stream (LDES) [[!LDES]] using Activity Streams entities [[!activitystreams-vocabulary]].
+
+The source code implementation of the pipeline is maintained at [rdf-connect/belgium-dcat-ap-feed](https://github.com/rdf-connect/belgium-dcat-ap-feed). The pipeline is implemented with (RDF-Connect) [[!RDF_CONNECT]] and transforms the Belgian DCAT-AP catalog dump into an append-only feed of Activity Streams events.
+
+This implementation is currently deployed in two publication contexts:
+1. **BOSA premises deployment**: a live feed is published at [mqa.data.gov.be/ldes](https://mqa.data.gov.be/ldes). At the time of writing, this deployment does not yet include the latest updates from the upstream pipeline source code. Coordination with BOSA is ongoing to align their deployment with the newest implementation state.
+2. **GitHub Pages deployment**: a live feed is also published at [rdf-connect.github.io/belgium-dcat-ap-feed/index.trig](https://rdf-connect.github.io/belgium-dcat-ap-feed/index.trig). This feed is generated and published automatically by a GitHub Action that runs the RDF-Connect pipeline and commits the resulting static feed artifacts, which are then published via GitHub Pages.
+
+## Used prefixes ## {#prefixes}
+
+The following prefixes are used throughout this document:
+
+<pre class=simpledef>
+as: https://www.w3.org/ns/activitystreams#
+dct: http://purl.org/dc/terms/
+dcat: http://www.w3.org/ns/dcat#
+ldes: https://w3id.org/ldes#
+tree: https://w3id.org/tree#
+rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+xsd: http://www.w3.org/2001/XMLSchema#
+geodcat: http://data.europa.eu/930/
+</pre>
+
+## General description of the BOSA DCAT-AP feed ## {#general}
+
+The BOSA DCAT-AP feed is an append-only event stream represented as an RDF resource typed `ldes:EventStream` that is given an IRI.
+The `ldes:EventStream` has the `ldes:timestampPath` property set to `as:published`, which configures the property used in `as:Activity`
+to point to the entity that is the direct object of the activity being altered.
+
+The feed relies on RDF Named Graphs. The static documents are published using `application/trig` as MIME type.
+
+<div class="example" >
+The BOSA `ldes:EventStream` definition
+```turtle
+<https://mqa.data.gov.be/ldes/index.trig> a ldes:EventStream, dcat:Dataset;
+    ldes:timestampPath as:published;
+    dct:title "DCAT-AP Feed of Data.gov.be"@en;
+    tree:shape <https://semiceu.github.io/LDES-DCAT-AP-feeds/shape.ttl#ActivityShape>;
+    tree:view <https://mqa.data.gov.be/ldes/https_3A_2F_2Fw3id.org_2Fsds_23Stream/index.trig>.
+```
+
+</div>
+
+## Activities ## {#activities}
+
+The pipeline generates ActivityStreams events (Create, Update, Delete) for changed resources. 
+These activities use the property `as:object` with the IRI of the DCAT-AP entity. 
+They also use the `as:published` property with an `xsd:dateTime` datatype. 
+The activity is identified using an IRI, and the payload that corresponds to the DCAT-AP entity is provided within a named graph 
+matching the activity IRI.
+
+<div class="example">
+An activity in the BOSA DCAT-AP feed in TriG
+```turtle
+<#ff209fce82bd66a1f46376d704e3ce8c> rdf:type as:Create ;
+    as:object <http://data.gov.be/.well-known/genid/dataset/bmdc/bmdc.be:dataset:561> ;
+    as:published "2026-06-15T15:31:10.072Z"^^xsd:dateTime .
+
+<#ff209fce82bd66a1f46376d704e3ce8c> {
+    <http://data.gov.be/.well-known/genid/dataset/bmdc/bmdc.be:dataset:561> a dcat:Dataset ;
+        geodcat:custodian <http://data.gov.be/.well-known/genid/org/d135a1c37e6fb9677908dd2355d646b467d50497> ;
+        geodcat:referenceSystem <http://www.opengis.net/def/crs/EPSG/0/4258> ;
+        geodcat:resourceType <http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset> ;
+        geodcat:topicCategory <http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/oceans> ;
+        dct:created "2014-04-18T14:23:19Z"^^xsd:dateTime ;
+        dct:description "Cet ensemble de données se compose des sources suivantes: (1) G. Billen (1976). Evaluation of nitrifying activity in sediments by darc 14C-bicarbonate incorporation (1976).Water Research Vol. 10, pp. 51-57 (2) 1977. Stalen Noordzee : kruisvaart 1 maart 1977 en 2 mei 1977. Bepaling van nitraat, nitriet, ammoniac, fosfaat, silicium. (3) 1978. Analyse van nitraat, nitriet, fosfaat, silicium: Kruisvaarten 8-16, 1978. (4) D. Van Gansbeke, A. Braeckman, M. De Keere (1980). Nutrientenanalyse van de monitoring van de kustzone door de automatische analyseketen (A11-systeem).Benthos/1980:1 (5) Baeyens, Mommaerts, Goeuens, Dehairs, Dedeurwaerder, Decadt (1984). Schémas dynamiques de l'azote dissous dans la baie sud de la mer du Nord.Sciences estuariennes, côtières et du plateau (1984) 18, 499-510 (6) PMPZ-DBII CRA-OC Nutriments. (7) Martine Somville (s.d.). Dosage de la nitrate réductase en Mer du Nord et dans la partie aval de l'estuare de l'Escaut. (8) FLEX 1976: Analyse van nitraat, nitriet, fosfaat, silicium. (9) J.P. Mommaerts, W. Baeyens, G. Decadt (s.d.). Groupe « Matières organiques » : Rapport de synthèse 1977-1978. Synthese des recherches sur les nutriments.OM/1977-1978: 02 (10) Kruisvaarten 1977 (1-7): bepaling van NO2-, NO3-, NH3, PO4---, silicium. (11) Martine Somville (s.d.). Nitrification et dénitrification dans l'estuaire de l'escaut.OM/1978 20 (12) A. Vandenhoudt (s.d.). Analyses des éléments nutritifs du coq van het de l'enquête van de maandelijkse in de zuidelijke noordzee, 1979.Survey/1980:01 (13) A. Vandenhoudt (s.d.). Nutrient analyses van de maandelijkse survey's van het rooster in de zuidelijke noordzee, 1980.Survey/1981:01 (14) A. Vandenhoudt (s.d.). Analyses nutritionnelles du coq van het de l'enquête van de maandelijkse in de zuidelijke noordzee, 1981.Survey/1982:01 (15) A. Gaspar, J.H. Hecq, M. Licot (s.d.). Résultats des dosages de l'activité enzymatique nutritionnelle du zooplancton (activité amylasique).SURVEY/1981 : 07 (16) J. P. Mommaerts, I. Elskens (s.d.). Seizoen variatie en ruimtelijke verspreiding van de nutrienten in de zuidelijke Noordzee.Enquête 1978: 02 (17) Decadt, Goeyens (s.d.). Seizoenvariatie en ruimtelijke verspreiding van de nutrienten in de Zuidelijke Noordzee.Enquête 78.07"@fr-t-en;
+        dct:identifier "doi:10.24417/bmdc.be:dataset:561" ;
+        dct:issued "2026-05-13T15:12:08.556Z"^^xsd:dateTime ;
+        dct:language <http://publications.europa.eu/resource/authority/language/ENG> ,
+            <http://publications.europa.eu/resource/authority/language/FRE> ,
+            <http://publications.europa.eu/resource/authority/language/NLD> ;
+        dct:modified "2019-05-02T15:44:08Z"^^xsd:dateTime ;
+        dct:publisher <https://org.belgif.be/id/CbeRegisteredEntity/0353070496> ;
+        dct:rightsHolder <https://org.belgif.be/id/CbeRegisteredEntity/0353070496> ;
+        dct:spatial <http://marineregions.org/mrgid/22253> , <http://marineregions.org/mrgid/2350> ;
+        dct:temporal [
+            a dct:PeriodOfTime ;
+            dcat:endDate "1982-01-31"^^xsd:date ;
+            dcat:startDate "1977-01-01"^^xsd:date
+        ] ;
+        dct:title "CRA : Nutriments dans la baie sud de la mer du Nord, par VUB, ULB et MUMM (1976-1982)"@fr-t-en 
+        ...
+        .
+}
+```
+
+</div>
+
+## Bucketization and state tracking ## {#bucketization}
+
+Changes are tracked by comparing the current catalog dump with the previous state stored in a local LevelDB instance ([`pipeline/leveldb/`](https://github.com/rdf-connect/belgium-dcat-ap-feed/tree/master/pipeline/leveldb)).
+The generated activities are then bucketized using a `tree:TimebasedFragmentation` strategy with the following parameters:
+- `tree:timestampPath as:published`: the property used to determine the timestamp of each activity for bucketization purposes. 
+- `tree:maxSize 1000`: the maximum number of activities/events per bucket, which ensures that feed fragments remain manageable in size.
+- `tree:k 4`: the branching factor of the search tree, which determines how many child buckets are created when a bucket exceeds the `maxSize` threshold.
+- `tree:minBucketSpan 600` (10 minutes): the minimum time span that a bucket must cover before it can be split, which prevents excessive fragmentation of the feed when there are many events in a short period.
+
+Bucketization state is persisted in [`pipeline/feed-state/bucketize-state.json`](https://github.com/rdf-connect/belgium-dcat-ap-feed/tree/master/pipeline/feed-state/bucketize-state.json), allowing incremental execution and reproducible feed generation across runs.
+
+## Traversing the search tree ## {#traversing}
+
+The feed MUST follow the chronological search tree from the Server Primer [[LDES-SERVER-PRIMER]]. 
+Consequently, LDES clients SHOULD traverse the feed using the chronological ascending order mode specified in the LDES specification [[!LDES]].
+
+# Implementation report # {#implementation}
+
+## Architecture ## {#architecture}
+
+The feed generation is implemented as an RDF-Connect [[!RDF_CONNECT]] pipeline defined in [`pipeline/github-pipeline.ttl`](https://github.com/rdf-connect/belgium-dcat-ap-feed/tree/master/pipeline/github-pipeline.ttl) in the source repository.
+The current implementation composes six processors in sequence:
+1. **`rdfc:GlobRead` (`<globReader>`)** reads the compressed DCAT data dump `../all/datagovbe_edp.xml.gz`.
+2. **`rdfc:GunzipFile` (`<gunzipper>`)** decompresses the RDF/XML dump.
+3. **`rdfc:DumpsToFeed` (`<asConverter>`)** converts the dump to Activity Streams events based on the stored state from previous executions.
+4. **`rdfc:Sdsify` (`<sdsifier>`)** annotates members with SDS metadata which allows for stream-based fragmentation and publishing as a LDES.
+5. **`rdfc:Bucketize` (`<bucketizer>`)** applies time-based fragmentation and writes state to [`./feed-state/bucketize-state.json`](https://github.com/rdf-connect/belgium-dcat-ap-feed/tree/master/pipeline/feed-state/bucketize-state.json).
+6. **`rdfc:LdesDiskWriter` (`<ldesDiskWriter>`)** writes the resulting feed fragments into [`../docs/`](https://github.com/rdf-connect/belgium-dcat-ap-feed/tree/master/docs/).
+
+The data and metadata channels are explicitly wired between processors (`<compressed_data>`, `<decompressed_data>`, `<as_stream>`, `<sds_stream>`, `<sds_metadata>`, `<bucketized_stream>`, `<bucketized_metadata>`), which ensures deterministic ordering from source dump ingestion to static feed publication.
+
+For the GitHub Pages deployment, this pipeline is executed by [`.github/workflows/create-feed.yml`](https://github.com/rdf-connect/belgium-dcat-ap-feed/blob/master/.github/workflows/create-feed.yml) on each push to `master` and on the cron schedule `0 0 */5 * *` (every 5 days at midnight UTC).
+
+```text
+[Belgian DCAT-AP RDF/XML dump: all/datagovbe_edp.xml.gz]
+         ↓
+  [GlobRead]
+         ↓
+  [GunzipFile]
+     ↓
+ [DumpsToFeed Processor] → [LevelDB State]
+         ↓
+     [Sdsify Processor]
+         ↓
+ [Bucketize Processor] → [Feed State JSON]
+         ↓
+  [LdesDiskWriter Processor]
+         ↓
+ [docs/ directory] → [GitHub Pages / BOSA deployment]
+```
+
+## Setup ## {#setup}
+
+### Prerequisites ### {#prerequisites}
+- Node.js 22 or higher
+- npm
+
+### Local development ### {#local-development}
+
+```bash
+cd pipeline
+npm install
+npx rdfc github-pipeline.ttl
+```
+
+## Publisher implementations ## {#implementationProviders}
+
+* **Source implementation**: [rdf-connect/belgium-dcat-ap-feed](https://github.com/rdf-connect/belgium-dcat-ap-feed)
+* **BOSA deployment (premises)**: [mqa.data.gov.be/ldes](https://mqa.data.gov.be/ldes)
+* **GitHub Pages deployment (automated by GitHub Action)**: [rdf-connect.github.io/belgium-dcat-ap-feed/index.trig](https://rdf-connect.github.io/belgium-dcat-ap-feed/index.trig)
+
+## Additional Resources ## {#additional-resources}
+
+- [Source repository: belgium-dcat-ap-feed](https://github.com/rdf-connect/belgium-dcat-ap-feed)
+- [Pipeline definition](https://github.com/rdf-connect/belgium-dcat-ap-feed/blob/master/pipeline/github-pipeline.ttl)
+- [GitHub workflow used for publication](https://github.com/rdf-connect/belgium-dcat-ap-feed/blob/master/.github/workflows/create-feed.yml)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [GitHub Pages Documentation](https://docs.github.com/en/pages)
+- [RDF-Connect Documentation](https://rdf-connect.github.io/)
+- [DCAT-AP Feed Specification](https://semiceu.github.io/LDES-DCAT-AP-feeds/)
+
+## Support ## {#support}
+
+For issues specific to:
+- **RDF-Connect pipeline source code**: Check [belgium-dcat-ap-feed](https://github.com/rdf-connect/belgium-dcat-ap-feed)
+
+# Consuming DCAT-AP-Feeds: integration with Piveau at the EU Publications Office # {#consumption}
+
+This section reports on the consumption side of the DCAT-AP-Feed ecosystem. Specifically, it describes the technical work carried out to enable the EU Publications Office (OP) to automatically ingest DCAT-AP-feeds into their internal catalog management platform.
+
+## Context: Piveau at the EU Publications Office ## {#piveau-context}
+
+The OP manages DCAT-AP catalogs submitted by EU member states through an open-source platform called [Piveau](https://doc.piveau.eu/general/introduction/). Piveau is an infrastructure for managing and harvesting open data portal catalogs, and it relies on [Piveau Consus](https://doc.piveau.eu/consus/) as its pipeline orchestration system. Piveau Consus is a segment-based pipeline engine that chains individual import and export processors to transform and route datasets between sources and sinks in an ETL (Extract, Transform, Load) process.
+
+In this pilot, we extended Piveau to support DCAT-AP-feed consumption. The adoption of DCAT-AP-feeds offers a complementary pathway: instead of periodically re-fetching entire catalogs, a feed-based consumer can subscribe to an append-only event stream and incrementally synchronize its internal state, processing only the changes since the last run.
+
+## The `piveau-consus-importing-ldes` plugin ## {#piveau-plugin}
+
+To enable DCAT-AP-feed consumption within Piveau, a new Piveau Consus segment was developed and made available as open-source at [rdf-connect/piveau-consus-importing-ldes](https://github.com/rdf-connect/piveau-consus-importing-ldes). This segment acts as a drop-in LDES importer for Piveau Consus pipelines, exposing an HTTP endpoint that Piveau Consus invokes to start feed traversal.
+
+### Architecture ### {#plugin-architecture}
+
+The plugin is implemented as an RDF-Connect [[!RDF_CONNECT]] pipeline (`pipeline.ttl`) composed of two processors:
+
+1. **`rdfc:HTTPConsumer` (`<httpInput>`)** exposes an HTTP server (default port `3000`) that accepts `PUT` requests with `application/json` payloads following the Piveau Consus segment wire format. When a request is received, it writes the decoded descriptor to an output channel for the next processor. The host and port are configurable via the `LDES_PORT` environment variable.
+2. **`rdfc:Piveau` (`<piveau>`)** reads the descriptor from the channel, initializes an LDES client against the configured endpoint URL, streams each RDF entity from the source, converts the RDF quads to N-Quads serialization using N3.js, and forwards each entity to the next segment in the Piveau Consus pipeline chain via HTTP PUT. The processor implements retry logic and continues processing after individual entity errors.
+
+```text
+Consus Control Plane
+        ↓
+    [Descriptor with LDES config]
+        ↓
+   HTTP PUT to /pipe
+        ↓
+   HTTPConsumer (listens)
+        ↓
+   Piveau Processor
+        ├─ Connect to LDES endpoint
+        ├─ Stream RDF entities
+        └─ Convert to N-Quads
+        ↓
+   Send to next Consus segment
+        ↓
+   [Next segment processes metadata]
+```
+
+### Configuration ### {#plugin-configuration}
+
+Piveau Consus invokes the segment by sending a `PUT` request to `http://<host>:<port>/pipe` with a JSON body following the Piveau Consus pipeline message format. The `config` block of the segment body accepts the following LDES-specific options:
+
+<dl>
+  <dt>`url`</dt><dd>Required. The URL of the LDES feed entrypoint (e.g., the DCAT-AP-feed root document).</dd>
+  <dt>`catalogue`</dt><dd>Identifier of the target catalogue in Piveau into which the resources will be imported.</dd>
+  <dt>`statePath`</dt><dd>Path to a local JSON file used to persist the client's replication state across runs. When provided, the client resumes from the last synchronized position, enabling incremental ingestion.</dd>
+  <dt>`ordered`</dt><dd>Traversal order of the LDES event stream. Accepted values: `ascending`, `descending`, or `none` (default). For DCAT-AP-feeds that use `ldes:timestampPath`, `ascending` is the recommended setting.</dd>
+  <dt>`fetchConfig`</dt><dd>Optional HTTP client configuration object. Allows tuning of retry behaviour, concurrency limits, and other transport-level settings used when fetching feed fragments.</dd>
+</dl>
+
+<div class="example">
+Example Piveau Consus pipeline message sent to `piveau-consus-importing-ldes`
+```json
+{
+  "header": {
+    "id": "e106e79b-ad9a-4c9c-ade7-b49c58ff53fb",
+    "runId": "08501a2a-4245-4804-8e1a-9303b49f6277",
+    "startTime": "2024-03-21T12:00:00",
+    "name": "ldes-source",
+    "title": "Harvester - LDES source",
+    "version": "2.0.0",
+    "context": "BEL",
+    "transport": "payload"
+  },
+  "body": {
+    "segments": [
+      {
+        "header": {
+          "name": "piveau-consus-importing-ldes",
+          "segmentNumber": 1,
+          "title": "Importing LDES",
+          "processed": false
+        },
+        "body": {
+          "endpoint": {
+            "address": "http://localhost:3000/",
+            "method": "PUT",
+            "protocol": "http"
+          },
+          "config": {
+            "url": "https://rdf-connect.github.io/belgium-dcat-ap-feed/index.trig",
+            "catalogue": "bosa-dcat-ap",
+            "statePath": "/tmp/bosa-feed-state",
+            "ordered": "ascending"
+          }
+        }
+      },
+      {
+        "header": {
+          "name": "piveau-consus-exporting-hub",
+          "segmentNumber": 2,
+          "title": "Exporting hub",
+          "processed": false
+        },
+        "body": {
+          "endpoint": {
+            "address": "http://piveau-consus-exporting-hub/pipe",
+            "method": "PUT",
+            "protocol": "http"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</div>
+
+### Deployment ### {#plugin-deployment}
+
+**Locally:**
+
+```bash
+npm install
+npm run build
+npx rdfc pipeline.ttl
+```
+
+**Docker:**
+
+```bash
+docker build -t piveau-consus-importing-ldes .
+docker run --publish 3000:3000 piveau-consus-importing-ldes
+# To use a custom port:
+docker run --publish 3001:3001 -e LDES_PORT=3001 piveau-consus-importing-ldes
+```
+
+The TypeScript sources are in `src/` and compile to `lib/`. The plugin exports the `Piveau` and `HTTPConsumer` classes that implement the RDF-Connect `Processor` interface.
+
+### RDF processing, state management and error handling ### {#plugin-internals}
+
+**RDF processing:** The `Piveau` processor uses the `ldes-client` library to stream RDF events from LDES-compliant endpoints and N3.js to convert between RDF quad formats. All quads are serialized as N-Quads for transport through the Consus pipeline. Entities are processed individually via quad streaming, making the plugin suitable for large LDES sources.
+
+**State management:** When `statePath` is configured, the plugin persists a LevelDB-based state at the given path. On subsequent runs the LDES client resumes from the last known position, preventing duplicate harvesting of unchanged records and enabling incremental ingestion.
+
+**Error handling:** The plugin includes HTTP retry logic for transient failures and graceful per-entity error logging. Processing continues after individual entity errors, and connection pooling with configurable concurrency (via `fetchConfig`) prevents resource exhaustion on large feeds.
+
+## Additional Resources ## {#consumption-resources}
+
+- [piveau-consus-importing-ldes source code](https://github.com/rdf-connect/piveau-consus-importing-ldes)
+- [Piveau documentation](https://doc.piveau.eu/general/introduction/)
+- [Piveau Consus documentation](https://doc.piveau.eu/consus/)
+- [LDES specification](https://semiceu.github.io/LinkedDataEventStreams/)
+- [DCAT-AP Feed Specification](https://semiceu.github.io/LDES-DCAT-AP-feeds/)
